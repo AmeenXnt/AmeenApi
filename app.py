@@ -1,41 +1,31 @@
 from flask import Flask, request, jsonify
 import requests
-import re
 
 app = Flask(__name__)
 
-# Function to extract the video URL from the Instagram page
-def extract_video_url(instagram_url):
-    try:
-        response = requests.get(instagram_url)
-        if response.status_code != 200:
-            return None
-
-        video_url = re.search('"video_url":"(.*?)"', response.text)
-        if video_url:
-            return video_url.group(1).replace("\\u0026", "&")
-
-        return None
-    except Exception as e:
-        print(f"Error extracting video URL: {e}")
-        return None
-
-@app.route('/api/download/insta/reel', methods=['GET'])
-def download_instagram_reel():
+@app.route('/AmeenInt/dl/insta', methods=['GET'])
+def download_instagram_video():
     url = request.args.get('url')
-
     if not url:
-        return jsonify({'error': 'Please provide a valid Instagram URL.'}), 400
+        return jsonify({"status": 400, "error": "No URL provided"}), 400
 
-    video_url = extract_video_url(url)
-    if video_url:
-        return jsonify({'media': video_url}), 200
-    else:
-        return jsonify({'error': 'Failed to retrieve video from the provided URL.'}), 400
+    try:
+        encoded_url = requests.utils.quote(url)
+        api_url = f"https://saveinsta.io/dl.php?url={encoded_url}"
 
-# Entry point for Vercel or Render
-def handler(event, context):
-    return app(event, context)
+        response = requests.get(api_url)
+        
+        if response.status_code == 200:
+            media_url = response.url
+            return jsonify({
+                "status": 200,
+                "media": [media_url]
+            })
+        else:
+            return jsonify({"status": response.status_code, "error": "Failed to retrieve video"}), response.status_code
+    except Exception as e:
+        return jsonify({"status": 500, "error": str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    app.run(port=8000)
+        
