@@ -1,8 +1,7 @@
 services:
   - type: web
-    name: instagram-reels-downloader
+    name: insta-downloader
     env: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn app:app"
-    plan: free
-    region: oregon
+    startCommand: "python app.py"
+    port: 8000
